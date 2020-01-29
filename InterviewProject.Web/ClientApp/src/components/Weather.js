@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import './Weather.css';
 import Forecast from "./Forecast"
-import { Route, Switch } from "react-router-dom";
-import { CSSTransition, TransitionGroup } from "react-transition-group";
-import backimg from '../images/stormy_background.jpeg';
+import { Link } from "react-router-dom";
+
 export class Weather extends Component {
  
   constructor(props) {
@@ -49,22 +48,30 @@ showCity(url) {
       .then(json => this.setState({ cities: json.data }));
 }
 
+renderCity() {
+    let { cities } = this.state;
+
+    return cities.map((_, i) => {
+        return (
+            <li className="cities-list-item" key={i}>
+                <span 
+                    className="cities-list-item-span"
+                    onClick={()=>this.getWeather( cities[i].woeid) }>
+                    <Link 
+                        to={`/city/${i}`}>{cities[i].title}
+                    </Link>
+                </span>
+            </li>
+        )
+    })
+}
+
 render() {
   let { location } = this.state;
   let weather = this.state.weather.slice(0, 5);
 
   return (
       <div>
-          <Switch>
-              <React.Fragment>
-              <TransitionGroup>
-              <Route exact path="/" render={ ()=> 
-                  <CSSTransition 
-                  in={true}
-                  appear={true}
-                  timeout={300}
-                  classNames='search-animation'
-                  >
                   <div className="search">
                      
                       <div>
@@ -83,25 +90,11 @@ render() {
                       </div> 
                       
                   </div>
-                  </CSSTransition>
-              }/>
-             
-              <Route path = { "/city/:id" } render = { () =>
-                  <CSSTransition 
-                      in={true}
-                      appear={true}
-                      timeout={1000}
-                      classNames='city-animation'
-                  >
+    
                       <Forecast
                           title={location}
                           weather={weather}
                       />
-                  </CSSTransition>
-              }/> 
-               </TransitionGroup>
-               </React.Fragment>
-          </Switch> 
       </div>
   )
 }
