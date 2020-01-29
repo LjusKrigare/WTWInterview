@@ -1,73 +1,107 @@
 import React, { Component } from 'react';
 import './Weather.css';
+import Forecast from "./Forecast"
+import { Route, Switch } from "react-router-dom";
+import { CSSTransition, TransitionGroup } from "react-transition-group";
 import backimg from '../images/stormy_background.jpeg';
 export class Weather extends Component {
-  state = {
-    image:"",
-    location:"",
-    temp:"",
-    humidity:"",
-    wind:"",
-    climate:"",
-    error:""
-  };
-  handleClick = async(e) => {
-    e.preventDefault();
-    const city = e.target.elements.city.value;
-    if(city){
-      const api_call = await fetch(`https://www.metaweather.com/api/location/search/?query=${city}`, { mode: 'no-cors'});
-      const data = await api_call.json();
-
-      const specific_city = await fetch('https://www.metaweather.com/api/location/' + data );
-      const display_data = await specific_city.json();
-      this.setState({
-        image:"",
-        location:"",
-        temp:"",
-        humidity:"",
-        wind:"",
-        climate:"",
-        error:""
-      });
-    }
-    else {
-      this.setState({
-        image:"",
-        location:"",
-        temp:"",
-        humidity:"",
-        wind:"",
-        climate:"",
-        error:"Please enter city and country details correctly"
-      });
+ 
+  constructor(props) {
+    super(props);
+    this.state = {
+        cities: [],
+        weather: [],
+        location: "",
+        ulr: ""
     }
 }
-  render() {
-    return (
-      <div className="container" id="c1">
-        <center>
-       { /* <img src={backimg} width="100%"/><br></br> */ }
-        <div className="card" id="c2"><form onSubmit={this.handleClick}>
-        <h3>Todays Weather</h3><br></br>
-            <div className="row">
-              <div className="col-md-4"><label>Search</label></div>
-              <div className="col-md-8"><input type="text" name="city" className="form-control"/><br></br></div>
-              <div className="col-md-10"></div>
-              <div className="col-md-2"><button className="btn btn-info">Get Weather</button><br></br><br></br></div>
-            </div>
-          </form>
-          {this.state.error!=''?<div class="alert alert-primary" role="alert">{this.state.error}</div>:''}
-          </div>
-          {this.state.temp!=''?
-          <div id="bck"><div className="row">
-            <div className="col-md-4"><center><img src={this.state.image} width="100px" height="100px"/><br></br><h4><b>{this.state.climate}</b></h4><h4><b>{this.state.location}</b></h4></center></div>
-            <div className="col-md-4"><center><h3 id="h1">Temperature: {this.state.temp}<br></br>Humidity: {this.state.humidity}<br></br>Wind mph: {this.state.wind}</h3></center></div>
-            <div className="col-md-4"></div>
-          </div></div>:''}
-          <br></br>
-          <br></br>
-          </center>
-      </div>
-    );
+
+componentWillMount() {
+  localStorage.getItem('city') && this.setState({
+      favourites: JSON.parse(localStorage.getItem('city'))
+  })
+}
+
+getWeather(woeid) {
+  fetch(`http://localhost:8080/city/${ woeid }`)
+      .then((res) => res.json())
+      .then((res) => {
+          this.setState({
+              weather: res.data.consolidated_weather,
+              location: res.data.title + " " + res.data.parent.title
+          })
+      })
+      .catch((err) => alert("Error :" + err))
+}
+
+searchCity(city) {
+  if (city.trim() === '') {
+      this.setState({ cities: [] })
+      return;
   }
+  this.setState({ url: city })
+  this.showCity(city);
+}
+
+showCity(url) {
+  fetch(`http://localhost:8080/weather/${url}`)
+      .then(res => res.json())
+      .then(json => this.setState({ cities: json.data }));
+}
+
+render() {
+  let { location } = this.state;
+  let weather = this.state.weather.slice(0, 5);
+
+  return (
+      <div>
+          <Switch>
+              <TransitionGroup>
+              <Route exact path="/" render={ ()=> 
+                  <CSSTransition 
+                  in={true}
+                  appear={true}
+                  timeout={300}
+                  classNames='search-animation'
+                  >
+                  <div className="search">
+                     
+                      <div>
+                          <input 
+                              className="search-input"
+                              type="text"
+                              placeholder="Search for a city"
+                              onChange={(e) => this.searchCity( e.target.value )}
+                          />
+                      </div> 
+                      <div className = "cities">
+                          <ul className="cities-list">
+                              { this.renderCity() }
+                          </ul>
+
+                      </div> 
+                      
+                  </div>
+                  </CSSTransition>
+              }/>
+             
+              <Route path = { "/city/:id" } render = { () =>
+                  <CSSTransition 
+                      in={true}
+                      appear={true}
+                      timeout={1000}
+                      classNames='city-animation'
+                  >
+                      <Forecast
+                          title={location}
+                          weather={weather}
+                      />
+                  </CSSTransition>
+              }/> 
+               </TransitionGroup>
+          </Switch> 
+      </div>
+  )
+}
+
 }
