@@ -56,6 +56,7 @@ render() {
   return (
       <div>
           <Switch>
+              <React.Fragment>
               <TransitionGroup>
               <Route exact path="/" render={ ()=> 
                   <CSSTransition 
@@ -99,6 +100,7 @@ render() {
                   </CSSTransition>
               }/> 
                </TransitionGroup>
+               </React.Fragment>
           </Switch> 
       </div>
   )
